@@ -2,6 +2,29 @@ from tkinter import *
 from tkinter import messagebox   # import *是指所有的class
 import random
 import pyperclip
+import json
+
+
+# ---------------------------- SEARCH DATA ------------------------------- #
+def search_data():
+        web = web_entry.get()
+        try:
+            with open("Password.json", "r") as data_file:
+                new_file = json.load(data_file)
+
+        except FileNotFoundError:
+            messagebox.showinfo(title="Error", message="No Date File Found.")
+
+        else:
+            if web in new_file:
+                email = new_file[web]["Email"]
+                password = new_file[web]["Password"]
+                messagebox.showinfo(title=web, message=f"Email: {email}\nPassword: {password}")
+                pyperclip.copy(password)
+            else:
+                messagebox.showinfo(title="Oops", message=f"Sorry,There Aren't Website:{web}  In Data")
+
+
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def generate_password():
@@ -32,16 +55,30 @@ def save_data():
     web = web_entry.get()
     email = email_entry.get()
     password = password_entry.get()
+    new_dict= { web:{
+                "Email":email,
+                "Password":password,
+                                    }
+    }
     if len(web) == 0 or len(password) == 0:
         messagebox.showinfo(title="Oops", message="Please don't leave any fields empty")
     else:
-        sure_check = messagebox.askokcancel(title=web, message=f"These are the details entered: \nEmail:{email} \nPassword:{password} "
-                                                  f"\nis it ok")     #最後確認資料是否執行
-        if sure_check:
-            with open("Password.csv", "a") as f:
-                f.write(f"{web}  / {email}  / {password}\n")
-                web_entry.delete(0, END)  # 資料填寫完後刪除app上的資料
-                password_entry.delete(0, END)
+        try:
+            with open("Password.json", "r") as data_file:
+                new_file = json.load(data_file)         #json讀取舊檔案
+
+        except FileNotFoundError:
+            with open("Password.json", "w") as date_file:
+                json.dump(new_dict, date_file, indent=4)
+
+        else:
+            new_file.update(new_dict)  #json將新資料加進舊資料裡
+
+            with open("Password.json", "w") as date_file:
+                json.dump(new_file, date_file, indent=4)  #將更新檔案寫入舊檔案
+
+        web_entry.delete(0, END)  # 資料填寫完後刪除app上的資料
+        password_entry.delete(0, END)
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -66,11 +103,11 @@ password_label = Label(text="PASSWORD: ")
 password_label.grid(column=0, row=3)
 
 #Entry
-web_entry = Entry(width=35)
-web_entry.grid(column=1, row=1, columnspan=2)
+web_entry = Entry(width=26)
+web_entry.grid(column=1, row=1, columnspan=1)
 web_entry.focus()
 
-email_entry = Entry(width=35)
+email_entry = Entry(width=37)
 email_entry.grid(column=1, row=2, columnspan=2)
 email_entry.insert(0,"123@gmail.com")
 
@@ -78,6 +115,9 @@ password_entry = Entry(width=26)
 password_entry.grid(column=1, row=3)
 
 #Button
+search_button = Button(width=8, text="Search", command=search_data)
+search_button.grid(column=2, row=1)
+
 password_button = Button(text="Generate", command=generate_password)
 password_button.grid(column=2, row=3)
 
